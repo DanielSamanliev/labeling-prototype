@@ -57,14 +57,6 @@ export default function App() {
                         
                    </AutoSizer>
                 </div>
-                
-                {/* <div className="insights">
-                    {insights.map(insight =>
-                        <div key={insight.id} className="insight">
-                            <div className="insightTitle">{insight.title}</div>
-                            <div className="insightContent">{insight.content}</div>
-                        </div>)}
-                </div> */}
                 <div>&nbsp;</div>
             </div>
             <div className="appOptions"><h1>Options</h1></div>
