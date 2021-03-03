@@ -14,8 +14,7 @@
 }
 
 .insight {
-  margin-top: 30px;
-  margin-bottom: 30px;
+  display: flex;  
 }
 
 .insightTitle {
@@ -25,4 +24,8 @@
 
 .insightContent {
   margin-bottom: 40px;
+}
+
+.insightOptions {
+  width: 100px;
 }
