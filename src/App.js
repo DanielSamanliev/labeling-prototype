@@ -85,7 +85,7 @@ export default function App() {
         <div className="appOptionsGroups">
           <h1>Groups</h1>
           {groups.map((value, index) => {
-            return <h3 key={index}>{value}</h3>
+            return <h3 key={index}>{value}</h3>;
           })}
         </div>
       </div>
