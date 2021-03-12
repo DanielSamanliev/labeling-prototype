@@ -1,7 +1,7 @@
 .appBody {
   display: grid;
   text-align: center;
-  grid-template-columns: auto 80% auto;
+  grid-template-columns: auto 75% auto;
 }
 
 .appContent {
@@ -15,6 +15,11 @@
 
 .insight {
   display: flex;  
+}
+
+.selectedInsight {
+  display: flex;
+  border: thick gray;
 }
 
 .insightTitle {
@@ -32,4 +37,14 @@
 
 .appOptionsGroups {
   text-align: left;
+  margin-bottom: 300px;
+}
+
+.appOptionsKeywords {
+  text-align: left;
+}
+
+.keyword {
+  display: flex;
+  margin: 1px;
 }

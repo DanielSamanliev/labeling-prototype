@@ -1,9 +1,9 @@
 const Insight = (props) => {
   return (
-    <div key={props.key} className="insight">
+    <div key={props.key} ref={props.ref} className= {props.selected ? "selectedInsight" : "insight"}>
       <div>
         <div className="insightTitle">
-          {props.group} : {props.title}
+          {props.keyword} : {props.title}
         </div>
         <div className="insightContent">{props.content}</div>
       </div>
