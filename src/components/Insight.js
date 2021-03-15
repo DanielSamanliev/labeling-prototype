@@ -1,4 +1,12 @@
 const Insight = (props) => {
+  // if(!props.isSnippet) {
+  //   return (
+  //     <div className="insightGroup">
+  //       <h3>{props.content}</h3>
+  //     </div>
+  //   )
+  // }
+
   return (
     <div key={props.key} ref={props.ref} className= {props.selected ? "selectedInsight" : "insight"}>
       <div>

@@ -14,12 +14,14 @@
 }
 
 .insight {
-  display: flex;  
+  display: flex;
+  border-top: thick black;
+  border-bottom: thick black;
 }
 
 .selectedInsight {
   display: flex;
-  border: thick gray;
+  background-color: lightgray;  
 }
 
 .insightTitle {

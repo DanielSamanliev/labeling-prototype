@@ -1,27 +1,36 @@
 import * as React from "react";
 import { loremIpsum, username } from "react-lorem-ipsum";
 import "./App.css";
-import { GroupedVirtuoso } from "react-virtuoso";
+import { GroupedVirtuoso, Virtuoso } from "react-virtuoso";
 import Insight from "./components/Insight";
-import react from "react";
-import * as Hotkeys from "react-hotkeys-hook"
-import reactDom from "react-dom";
+import { useHotkeys } from 'react-hotkeys-hook';
+import Hotkeys from 'react-hot-keys'
+import { func } from "prop-types";
 
 export default function App() {
   const [backInsights, setInsights] = React.useState([]);
   const [insights, setVisInsights] = React.useState([]);
-  const [checkedItems, setCheckedItems] = React.useState({});
-  const [align, setAlign] = React.useState("start");
+  const [checkedItems, setCheckedItems] = React.useState({ "debit" : true, "ceo" : false, "donations": false, "fundraising": false });
+  const [align, setAlign] = React.useState("center");
   const [behavior, setBehavior] = React.useState("auto");
   const [count, setCount] = React.useState(0);
+  const [keyCount, setKeyCount] = React.useState(0);
   const virtuoso = React.useRef(null);
   const keywordsRef = React.useRef(null);
+  const groups = ["Key", "Personal", "Financing", "Who knows"];
+  const keywords = ["debit", "ceo", "donations", "fundraising"];
 
   const handleChange = (event) => {
     setCheckedItems({
       ...checkedItems,
       [event.target.name]: event.target.checked,
-    });    
+    });
+    setCount(0);
+    virtuoso.current.scrollToIndex({
+      index: 0,
+      align,
+      behavior
+    })
   };
 
   function getKeyword() {
@@ -46,9 +55,9 @@ export default function App() {
       return "Personal";
     }
     if (i > 50 && i < 75) {
-      return "Group3";
+      return "Financing";
     } else {
-      return "Group4";
+      return "Who knows";
     }
   }
 
@@ -67,6 +76,7 @@ export default function App() {
             //TODO: Add more groups
             group: getGroup(),
             keyword: getKeyword(),
+            isSnippet: true,
           };
         })
         .sort((a, b) => a.keyword.localeCompare(b.keyword))
@@ -81,16 +91,81 @@ export default function App() {
     );
   }, [checkedItems]);
 
-  Hotkeys.useHotkeys('Escape', () => "I work");
+  function getInsightsCount() {
+    return insights.count;
+  };
 
-  
+  function moveDown(count, ref, list) {
+    ref.current.scrollToIndex({
+      index: count + 1,
+      align,
+      behavior
+    });
+    //use list[count].id to change in db
+    return count < list.length - 1 ? count + 1 : count; 
+  }
 
+  function moveUp(count, ref) {
+    ref.current.scrollToIndex({
+      index: count - 1,
+      align,
+      behavior
+    });
+    //use list[count].id to change in db
+    return count > 0 ? count - 1 : count;
+  }
+
+  function prevKeyword(count, checkedItems, keywords) {
+    if(count > 0) {
+      setCheckedItems({
+        ...checkedItems,
+        [keywords[count]]: false,
+        [keywords[count - 1]]: true
+      });
+      return count - 1;
+    }
+    return count;
+  }
+
+  function nextKeyword(count, checkedItems, keywords) {
+    if(count < keywords.length - 1) {
+      setCheckedItems({
+        ...checkedItems,
+        [keywords[count]]: false,
+        [keywords[count + 1]]: true
+      });
+      return count + 1;
+    }
+    return count;
+  }
+
+  useHotkeys('s', () =>
+    setCount(prevCount => moveDown(prevCount, virtuoso, insights)),
+    {},
+    [insights]
+  );
+
+  useHotkeys('w', () =>
+    setCount(prevCount => moveUp(prevCount, virtuoso)),
+    {},
+    [insights]
+  );
+
+  useHotkeys("a", () =>
+    setKeyCount(prevCount => prevKeyword(prevCount, checkedItems, keywords)),
+    {},
+    [checkedItems, keywords]
+  )
+
+  useHotkeys("d", () => 
+    setKeyCount(prevCount => nextKeyword(prevCount, checkedItems, keywords)),
+    {},
+    [checkedItems, keywords]
+  )
 
   // TODO: Probably prettier ways of doing this
-  const groups = ["Key", "Personal", "Group3", "Group4"];
-  const keywords = ["debit", "ceo", "donations", "fundraising"];
   let groupCounts = [];
-
+  
   groups.forEach((groupName) => {
     groupCounts.push(
       insights.reduce(
@@ -101,16 +176,35 @@ export default function App() {
     );
   });
 
+
+
   return (
     <div className="appBody">
-      {console.log(checkedItems)}
-      {console.log(insights)}
       <div className="appAccounts">
         <h1>Accounts</h1>
+        {console.log(checkedItems)}
       </div>
       <div className="appContent">
         <div>&nbsp;</div>
-        <div className="insights" style={{ width: "100%", height: "100vh" }}>          
+        <div className="insights" style={{ width: "100%", height: "100vh" }}>
+          {/* <Virtuoso
+            data= {insights}
+            totalCount = {insights.count}            
+            itemContent= {(index) => {
+              return (
+                <Insight
+                  selected={index === count}
+                  isSnippet={insights[index]?.isSnippet}
+                  group={insights[index]?.group}
+                  key={insights[index]?.id}
+                  keyword={insights[index]?.keyword}
+                  group={insights[index]?.group}
+                  title={insights[index]?.title}
+                  content={insights[index]?.content}
+                />
+              )
+            }}
+          /> */}
           <GroupedVirtuoso
             ref={virtuoso}
             groupCounts={groupCounts}
@@ -133,7 +227,6 @@ export default function App() {
                   selected={index === count}
                   key={insights[index]?.id}
                   keyword={insights[index]?.keyword}
-                  group={insights[index]?.group}
                   title={insights[index]?.title}
                   content={insights[index]?.content}
                 />
@@ -174,7 +267,7 @@ export default function App() {
             {keywords.map((value, index) => {
               return (
                 <li ref={keywordsRef} className="keyword">
-                  <input type="checkbox" name={value} onChange={handleChange} checked={checkedItems[value]} />
+                  <input type="checkbox" name={value} onChange={handleChange} checked={checkedItems[value]} />                  
                   <div>{value}</div>
                 </li>
               );
