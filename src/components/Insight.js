@@ -8,12 +8,12 @@ const Insight = (props) => {
   // }
 
   return (
-    <div key={props.key} ref={props.ref} className= {props.selected ? "selectedInsight" : "insight"}>
+    <div className="insight" style={{border: "thick solid gray", display: "flex"}}>
       <div>
-        <div className="insightTitle">
+        <div className="insightTitle" style={{textAlign: "left"}}>
           {props.keyword} : {props.title}
         </div>
-        <div className="insightContent">{props.content}</div>
+        <div className="insightContent" style={{textAlign: "left"}}>{props.content}</div>
       </div>
       <div className="insightOptions">
         <div>&nbsp;</div>
@@ -24,7 +24,7 @@ const Insight = (props) => {
           viewBox="0 0 24 24"
           stroke-width="2"
           stroke="currentColor"
-          fill="none"
+          fill={props.status > 0 ? "green" : "none"}
           stroke-linecap="round"
           stroke-linejoin="round"
         >
@@ -38,7 +38,7 @@ const Insight = (props) => {
           viewBox="0 0 24 24"
           stroke-width="2"
           stroke="currentColor"
-          fill="none"
+          fill={props.status < 0 ? "red" : "none"}
           stroke-linecap="round"
           stroke-linejoin="round"
         >
