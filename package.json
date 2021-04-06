@@ -43,5 +43,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "connect-api-mocker": "^1.9.0",
+    "express": "^4.17.1",
+    "miragejs": "^0.1.41"
   }
 }

@@ -17,6 +17,7 @@
   display: flex;
   border-top: thick black;
   border-bottom: thick black;
+  margin-bottom: 40px;
 }
 
 .selectedInsight {

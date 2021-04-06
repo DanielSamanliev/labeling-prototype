@@ -1,37 +1,66 @@
 import * as React from "react";
+import { type ScrollIndices } from "./types";
 import { loremIpsum, username } from "react-lorem-ipsum";
 import "./App.css";
 import { GroupedVirtuoso, Virtuoso } from "react-virtuoso";
+import {
+  List,
+  AutoSizer,
+  CellMeasurer,
+  CellMeasurerCache,
+  ArrowKeyStepper,
+} from "react-virtualized";
 import Insight from "./components/Insight";
-import { useHotkeys } from 'react-hotkeys-hook';
-import Hotkeys from 'react-hot-keys'
+import { useHotkeys } from "react-hotkeys-hook";
+import Hotkeys from "react-hot-keys";
 import { func } from "prop-types";
+import { traverseTwoPhase } from "react-dom/test-utils";
 
 export default function App() {
   const [backInsights, setInsights] = React.useState([]);
   const [insights, setVisInsights] = React.useState([]);
-  const [checkedItems, setCheckedItems] = React.useState({ "debit" : true, "ceo" : false, "donations": false, "fundraising": false });
+  const cache = React.useRef(
+    new CellMeasurerCache({
+      fixedWidth: true,
+      defaultHeight: 120,
+    })
+  );
   const [align, setAlign] = React.useState("center");
+  const [keyStepper, setKeyStepper] = React.useState({
+    mode: "cells",
+    isClickable: true,
+    scrollToColumn: 0,
+    scrollToRow: 0,
+  });
   const [behavior, setBehavior] = React.useState("auto");
-  const [count, setCount] = React.useState(0);
+  const [currentScrollIndex, setCurrentScrollIndex] = React.useState(0);
   const [keyCount, setKeyCount] = React.useState(0);
-  const virtuoso = React.useRef(null);
   const keywordsRef = React.useRef(null);
   const groups = ["Key", "Personal", "Financing", "Who knows"];
   const keywords = ["debit", "ceo", "donations", "fundraising"];
+  const [checkedItems, setCheckedItems] = React.useState({
+    debit: true,
+    ceo: false,
+    donations: false,
+    fundraising: false,
+  });
 
   const handleChange = (event) => {
     setCheckedItems({
       ...checkedItems,
       [event.target.name]: event.target.checked,
     });
-    setCount(0);
-    virtuoso.current.scrollToIndex({
-      index: 0,
-      align,
-      behavior
-    })
+    setCurrentScrollIndex(0);
   };
+
+  // const handler = React.useCallback(
+  //   ({insights}) => {
+  //     console.log(insights)
+  //   },
+  //   [insights]
+  // );
+
+  // React.useEventListener('keyDown', handler);
 
   function getKeyword() {
     let i = Math.random() * 100;
@@ -69,14 +98,14 @@ export default function App() {
             id: key,
             title: username(),
             content: loremIpsum({
-              p: 1,
+              p: 2,
               startWithLoremIpsum: false,
               random: true,
             }),
             //TODO: Add more groups
             group: getGroup(),
             keyword: getKeyword(),
-            isSnippet: true,
+            status: 0,
           };
         })
         .sort((a, b) => a.keyword.localeCompare(b.keyword))
@@ -85,155 +114,50 @@ export default function App() {
   }, []);
 
   React.useEffect(() => {
-    setVisInsights(
-      [...backInsights]
-        .filter(x => checkedItems[x.keyword])
-    );
+    setVisInsights([...backInsights].filter((x) => checkedItems[x.keyword]));
   }, [checkedItems]);
 
-  function getInsightsCount() {
-    return insights.count;
-  };
-
-  function moveDown(count, ref, list) {
-    ref.current.scrollToIndex({
-      index: count + 1,
-      align,
-      behavior
-    });
-    //use list[count].id to change in db
-    return count < list.length - 1 ? count + 1 : count; 
-  }
-
-  function moveUp(count, ref) {
-    ref.current.scrollToIndex({
-      index: count - 1,
-      align,
-      behavior
-    });
-    //use list[count].id to change in db
-    return count > 0 ? count - 1 : count;
-  }
-
-  function prevKeyword(count, checkedItems, keywords) {
-    if(count > 0) {
-      setCheckedItems({
-        ...checkedItems,
-        [keywords[count]]: false,
-        [keywords[count - 1]]: true
-      });
-      return count - 1;
-    }
-    return count;
-  }
-
-  function nextKeyword(count, checkedItems, keywords) {
-    if(count < keywords.length - 1) {
-      setCheckedItems({
-        ...checkedItems,
-        [keywords[count]]: false,
-        [keywords[count + 1]]: true
-      });
-      return count + 1;
-    }
-    return count;
-  }
-
-  useHotkeys('s', () =>
-    setCount(prevCount => moveDown(prevCount, virtuoso, insights)),
-    {},
-    [insights]
-  );
-
-  useHotkeys('w', () =>
-    setCount(prevCount => moveUp(prevCount, virtuoso)),
-    {},
-    [insights]
-  );
-
-  useHotkeys("a", () =>
-    setKeyCount(prevCount => prevKeyword(prevCount, checkedItems, keywords)),
-    {},
-    [checkedItems, keywords]
-  )
-
-  useHotkeys("d", () => 
-    setKeyCount(prevCount => nextKeyword(prevCount, checkedItems, keywords)),
-    {},
-    [checkedItems, keywords]
-  )
-
   // TODO: Probably prettier ways of doing this
-  let groupCounts = [];
-  
+  let insightsToRender = [];
+
   groups.forEach((groupName) => {
-    groupCounts.push(
-      insights.reduce(
-        (counter, { group }) =>
-          groupName.localeCompare(group) === 0 ? (counter += 1) : counter,
-        0
-      )
-    );
+    insightsToRender.push(groupName);    
+    Array.prototype.push.apply(insightsToRender, insights
+        .filter((insight) => insight.group === groupName)
+        .filter((insight) => insight.keyword !== "ceo"));
   });
-
-
 
   return (
     <div className="appBody">
       <div className="appAccounts">
         <h1>Accounts</h1>
-        {console.log(checkedItems)}
       </div>
       <div className="appContent">
         <div>&nbsp;</div>
-        <div className="insights" style={{ width: "100%", height: "100vh" }}>
-          {/* <Virtuoso
-            data= {insights}
-            totalCount = {insights.count}            
-            itemContent= {(index) => {
+        {console.log(insightsToRender)}
+        <Virtuoso
+          data={insightsToRender}
+          totalCount={insightsToRender.length}
+          itemContent={(index) => {
+            if(typeof insightsToRender[index] === "string") {
               return (
-                <Insight
-                  selected={index === count}
-                  isSnippet={insights[index]?.isSnippet}
-                  group={insights[index]?.group}
-                  key={insights[index]?.id}
-                  keyword={insights[index]?.keyword}
-                  group={insights[index]?.group}
-                  title={insights[index]?.title}
-                  content={insights[index]?.content}
-                />
-              )
-            }}
-          /> */}
-          <GroupedVirtuoso
-            ref={virtuoso}
-            groupCounts={groupCounts}
-            groupContent={(index) => {
-              return (
-                <div
-                  style={{
-                    backgroundColor: "white",
-                    fontSize: "30px",
-                    marginBottom: "10px",
-                  }}
-                >
-                  {groups[index]}
+                <div id={insightsToRender[index]}>
+                  <h2>{insightsToRender[index]}</h2>
                 </div>
-              );
-            }}
-            itemContent={(index) => {
-              return (
-                <Insight
-                  selected={index === count}
-                  key={insights[index]?.id}
-                  keyword={insights[index]?.keyword}
-                  title={insights[index]?.title}
-                  content={insights[index]?.content}
-                />
-              );
-            }}
-          />
-        </div>
+              )
+            }
+
+            return (
+              <Insight
+                key={insightsToRender[index]?.id}
+                status={insightsToRender[index]?.status}
+                keyword={insightsToRender[index]?.keyword}
+                title={insightsToRender[index]?.title}
+                content={insightsToRender[index]?.content}
+              />
+            );
+          }}
+        />
         <div>&nbsp;</div>
       </div>
       <div className="appOptions">
@@ -244,30 +168,17 @@ export default function App() {
             return <h3 key={index}>{value}</h3>;
           })}
         </div>
-        <div>
-          <button
-            onClick={() => {
-              console.log(virtuoso);
-              return false;
-            }}
-          >
-            Go to 1
-          </button>
-          {/* <button
-            onClick={() => {
-              keywordsRef.current.checked = false;
-              keywordsRef.
-            }}
-          >
-            Next
-          </button> */}
-        </div>
         <div className="appOptionsKeywords">
           <ul>
             {keywords.map((value, index) => {
               return (
                 <li ref={keywordsRef} className="keyword">
-                  <input type="checkbox" name={value} onChange={handleChange} checked={checkedItems[value]} />                  
+                  <input
+                    type="checkbox"
+                    name={value}
+                    onChange={handleChange}
+                    checked={checkedItems[value]}
+                  />
                   <div>{value}</div>
                 </li>
               );
@@ -277,4 +188,15 @@ export default function App() {
       </div>
     </div>
   );
+}
+
+{
+  /* <Insight
+                        key={insights[index]?.id}
+                        style={style}
+                        status={insights[index]?.status}
+                        keyword={insights[index]?.keyword}
+                        title={insights[index]?.title}
+                        content={insights[index]?.content}
+                      /> */
 }
